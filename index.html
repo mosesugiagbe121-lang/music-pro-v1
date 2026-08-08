@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#08090e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>My Music Pro</title>
+
+<!-- PWA Manifest for Android & Desktop Installation -->
+<link rel="manifest" id="app-manifest">
+<script>
+  const appManifest = {
+    "name": "My Music Pro",
+    "short_name": "Music Pro",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#08090e",
+    "theme_color": "#0b0b10",
+    "icons": [{
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%239b6cff'/%3E%3Ctext x='50%' y='50%' font-size='50' text-anchor='middle' dy='.35em'%3E🎵%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }]
+  };
+  document.getElementById('app-manifest').href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(appManifest));
+</script>
+
+<style>
+:root {
+  --bg: #08090e; --card: rgba(20, 21, 30, 0.78); --text: #ffffff;
+  --muted: #9da0ae; --accent: #9b6cff; --accent-hover: #8350f5; --yt-red: #ff0000;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0; color: var(--text); font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg); background-size: cover; background-position: center;
+  background-attachment: fixed; transition: background 0.35s ease;
+  min-height: 100vh; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+
+body::before {
+  content: ""; position: fixed; inset: 0; background: rgba(5, 6, 10, 0.38);
+  pointer-events: none; z-index: -1;
+}
+
+.app { max-width: 760px; margin: auto; min-height: 100vh; padding-bottom: 110px; }
+
+header { padding: 24px 18px 10px; display: flex; justify-content: space-between; align-items: center; }
+h1 { font-size: 28px; margin: 0; font-weight: 700; }
+.sub { color: var(--muted); font-size: 13px; }
+
+.header-actions { display: flex; gap: 10px; }
+.icon-btn {
+  width: 42px; height: 42px; border-radius: 50%; background: var(--card);
+  border: 1px solid rgba(255,255,255,0.08); color: white; font-size: 18px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s ease;
+}
+.icon-btn:active { transform: scale(0.92); }
+#installBtn { background: var(--accent); display: none; padding: 0 16px; border-radius: 20px; font-weight: 600; font-size: 14px; width: auto; }
+
+.search { margin: 12px 18px; padding: 12px 16px; border-radius: 16px; background: var(--card); display: flex; gap: 10px; border: 1px solid rgba(255,255,255,0.06); }
+.search input { width: 100%; background: none; border: 0; outline: 0; color: white; font-size: 15px; }
+
+.hero {
+  margin: 14px 18px; padding: 20px; border-radius: 24px;
+  background: linear-gradient(135deg, rgba(83, 42, 150, 0.7), rgba(20, 22, 35, 0.85));
+  display: flex; gap: 16px; align-items: center; box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+}
+.cover { width: 90px; height: 90px; border-radius: 18px; object-fit: cover; background: #242633; display: grid; place-items: center; font-size: 36px; flex-shrink: 0; }
+.hero h2 { margin: 0 0 6px; font-size: 20px; }
+.hero p { margin: 0; color: var(--muted); font-size: 13px; }
+
+.action { margin-top: 10px; padding: 9px 16px; background: var(--accent); border: 0; border-radius: 12px; color: white; font-weight: 600; cursor: pointer; }
+
+.filter-bar { display: flex; gap: 8px; padding: 10px 18px; overflow-x: auto; }
+.filter-chip { background: var(--card); border: 1px solid rgba(255,255,255,0.08); color: var(--muted); padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.section { padding: 4px 18px 12px; }
+.section h2 { font-size: 18px; margin-bottom: 10px; }
+
+.song { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; transition: background 0.2s ease; }
+.song:hover { background: rgba(255,255,255,0.04); }
+.thumb { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; background: #20212a; display: grid; place-items: center; flex-shrink: 0; position: relative; }
+.song-info { flex: 1; min-width: 0; }
+.song-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.artist { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+.play-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--accent); border: 0; color: white; cursor: pointer; display: grid; place-items: center; }
+.more-btn { background: none; border: 0; font-size: 20px; color: var(--muted); cursor: pointer; padding: 4px 8px; }
+.empty { color: var(--muted); padding: 24px 0; text-align: center; font-size: 14px; }
+
+.bottom { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(8, 9, 14, 0.94); backdrop-filter: blur(18px); border-top: 1px solid rgba(255,255,255,0.08); z-index: 5; padding-bottom: env(safe-area-inset-bottom); }
+.nav { max-width: 760px; margin: auto; display: flex; justify-content: space-around; padding: 8px 4px; }
+.nav button { background: none; border: 0; color: var(--muted); font-size: 11px; cursor: pointer; }
+.nav button span { display: block; font-size: 20px; margin-bottom: 2px; }
+.nav button.active { color: white; }
+
+/* Full Player Overlay */
+.player { position: fixed; inset: 0; background: rgba(8, 9, 14, 0.98); z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 24px 22px calc(24px + env(safe-area-inset-bottom)); opacity: 0; pointer-events: none; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.2s ease; }
+.player.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.player-header { display: flex; justify-content: space-between; align-items: center; }
+.visualizer-canvas { width: 100%; height: 60px; margin-top: 10px; border-radius: 8px; }
+
+.player .big { width: min(75vw, 320px); aspect-ratio: 1; margin: 10px auto; border-radius: 24px; object-fit: cover; background: linear-gradient(135deg, #34205d, #171821); box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-size: 72px; overflow: hidden; }
+.player h2 { text-align: center; margin: 10px 0 4px; font-size: 22px; }
+.player p { text-align: center; color: var(--muted); margin: 0 0 15px; font-size: 14px; }
+
+.time-stamps { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.progress input[type="range"], .volume input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+
+.controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 10px; }
+.controls button { background: none; border: 0; color: white; font-size: 22px; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.controls button.active { color: var(--accent); }
+.mainplay { width: 64px !important; height: 64px !important; border-radius: 50%; background: white !important; color: #111 !important; font-size: 24px !important; box-shadow: 0 8px 25px rgba(255,255,255,0.2); }
+
+.volume { display: flex; align-items: center; gap: 10px; max-width: 280px; margin: 15px auto 0; color: var(--muted); }
+
+dialog { border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; background: #15161e; color: white; width: min(92vw, 450px); padding: 24px; box-shadow: 0 25px 80px rgba(0,0,0,0.8); max-height: 85vh; overflow-y: auto; }
+dialog::backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
+dialog input, dialog select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #30323d; background: #0d0e14; color: white; margin: 10px 0 16px; outline: 0; font-family: inherit; }
+
+.actions { display: flex; gap: 10px; justify-content: flex-end; }
+.actions button { padding: 10px 18px; border-radius: 12px; border: 0; background: #272936; color: white; font-weight: 600; cursor: pointer; }
+.actions .primary { background: var(--accent); flex: 1; }
+.actions .yt-btn { background: var(--yt-red); }
+
+.search-results { max-height: 160px; overflow-y: auto; margin-bottom: 10px; border-radius: 12px; }
+.search-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: #1a1c26; margin-bottom: 5px; border-radius: 10px; }
+.search-item img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+
+.toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%) translateY(20px); background: #191a23; color: white; padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); opacity: 0; pointer-events: none; transition: 0.25s ease; z-index: 20; font-size: 13px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 99px; background: #2a213f; color: #cbb8ff; margin-left: 6px; }
+.badge.web { background: #193f21; color: #b8ffce; }
+.badge.yt { background: #3f2121; color: #ffb8b8; }
+</style>
+<!-- YouTube IFrame API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body>
+
+<!-- Hidden YouTube Player Container -->
+<div id="yt-player-container" style="position:absolute; width:0; height:0; top:-9999px; left:-9999px; pointer-events:none;"></div>
+
+<div class="app">
+  <header>
+    <div>
+      <h1>My Music Pro</h1>
+      <div class="sub">Ultimate Stream & PWA App</div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="installBtn">⬇ Install</button>
+      <button class="icon-btn" id="settings">⚙️</button>
+    </div>
+  </header>
+
+  <div class="search">
+    🔎 <input id="search" placeholder="Filter your library...">
+  </div>
+
+  <div class="hero">
+    <div class="cover" id="heroCover">🎵</div>
+    <div>
+      <h2>Library Collection</h2>
+      <p id="count">0 songs</p>
+      <button class="action" id="addHero">＋ Get New Music</button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-chip active" id="filterAll">All Songs</button>
+    <button class="filter-chip" id="filterFavs">♥ Favorites</button>
+    <button class="filter-chip" id="filterFunk">🪩 Procedural</button>
+  </div>
+
+  <section class="section">
+    <h2>Tracks</h2>
+    <div id="list"></div>
+  </section>
+</div>
+
+<nav class="bottom">
+  <div class="nav">
+    <button class="active" id="homeNav"><span>⌂</span>Home</button>
+    <button id="addNav"><span>🔍</span>Search</button>
+    <button id="funkNav"><span>🪩</span>Random</button>
+    <button id="playlistNavBtn"><span>📋</span>Playlists</button>
+  </div>
+</nav>
+
+<!-- Full-Screen Player -->
+<div class="player" id="player">
+  <div class="player-header">
+    <button class="icon-btn" id="closePlayer">⌄</button>
+    <span style="font-weight: 600; font-size: 14px;">Now Playing</span>
+    <button class="icon-btn" id="like" style="background:none; border:none;">♡</button>
+  </div>
+
+  <div class="big" id="bigCover">🎵</div>
+  <canvas class="visualizer-canvas" id="visualizer"></canvas>
+
+  <div>
+    <h2 id="nowTitle">Nothing playing</h2>
+    <p id="nowArtist">—</p>
+
+    <div class="progress">
+      <input id="seek" type="range" min="0" max="100" value="0">
+      <div class="time-stamps">
+        <span id="currTime">0:00</span>
+        <span id="durTime">0:00</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="shuffleBtn" title="Shuffle">🔀</button>
+      <button id="prev">⏮</button>
+      <button class="mainplay" id="mainPlay">▶</button>
+      <button id="next">⏭</button>
+      <button id="repeatBtn" title="Repeat Mode">🔁</button>
+    </div>
+
+    <div class="volume">
+      <button id="muteBtn" style="background:none; border:0; color:white; cursor:pointer;">🔊</button>
+      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8">
+    </div>
+  </div>
+</div>
+
+<!-- Combined Import Modal (Audius Live Search + YouTube Links + Local Files) -->
+<dialog id="meta">
+  <h2>🎵 Get New Music</h2>
+  
+  <p class="sub">1. Live Music Search (Audius):</p>
+  <div class="search" style="margin:5px 0 10px 0;">
+    <input id="netSearchInput" placeholder="Artist or Song name...">
+    <button id="netSearchBtn" style="background:none; border:none; color:white; font-size:18px;">🔎</button>
+  </div>
+  <div id="netResults" class="search-results"></div>
+
+  <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+
+  <p class="sub">2. Import via YouTube Link:</p>
+  <input id="ytInput" type="text" placeholder="https://youtu.be/...">
+  <div class="actions" style="margin-bottom: 15px;">
+    <button class="yt-btn" id="importYt" style="width:100%;">Add YouTube Link</button>
+  </div>
+
+  <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+
+  <p class="sub">3. Or upload local device audio files:</p>
+  <input id="files" type="file" accept="audio/*" multiple style="margin-bottom:0;">
+
+  <div class="actions" style="margin-top:20px;">
+    <button id="cancel" class="primary">Close Menu</button>
+  </div>
+</dialog>
+
+<!-- Settings Modal -->
+<dialog id="settingsDialog">
+  <h2>🎨 Personalize Theme</h2>
+  <div class="wallpapers" id="walls" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;"></div>
+  <div class="actions"><button id="closeSettings" class="primary">Done</button></div>
+</dialog>
+
+<!-- Playlist Dialog -->
+<dialog id="playlistDialog">
+  <h2>📋 Add to Playlist</h2>
+  <select id="playlistSelect"></select>
+  <input id="playlistName" placeholder="Or enter new playlist name...">
+  <div class="actions">
+    <button id="cancelPlaylist">Cancel</button>
+    <button class="primary" id="savePlaylist">Save</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+<audio id="audio" crossorigin="anonymous"></audio>
+
+<script>
+const $ = s => document.querySelector(s);
+let songs = [];
+let current = -1;
+let liked = new Set(JSON.parse(localStorage.getItem("liked_songs") || "[]"));
+let playlists = JSON.parse(localStorage.getItem("playlists") || "{}");
+let activeFilter = 'all';
+let isShuffle = false;
+let repeatMode = 0;
+const audio = $("#audio");
+
+// --- ANDROID PWA INSTALLATION ---
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $("#installBtn").style.display = "block";
+});
+
+$("#installBtn").addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') $("#installBtn").style.display = "none";
+    deferredPrompt = null;
+  }
+});
+
+// --- YOUTUBE API SETUP ---
+let ytPlayer = null;
+let isYTReady = false;
+let ytInterval = null;
+
+function onYouTubeIframeAPIReady() {
+  ytPlayer = new YT.Player('yt-player-container', {
+    height: '10', width: '10',
+    playerVars: { 'playsinline': 1, 'controls': 0, 'disablekb': 1 },
+    events: {
+      'onReady': () => { isYTReady = true; },
+      'onStateChange': onYTStateChange
+    }
+  });
+}
+
+function onYTStateChange(event) {
+  if (event.data === YT.PlayerState.PLAYING) {
+    $("#mainPlay").textContent = "Ⅱ";
+    clearInterval(ytInterval);
+    ytInterval = setInterval(() => {
+      const curr = ytPlayer.getCurrentTime() || 0;
+      const dur = ytPlayer.getDuration() || 0;
+      if (dur > 0) {
+        $("#seek").value = (curr / dur) * 100;
+        $("#currTime").textContent = formatTime(curr);
+        $("#durTime").textContent = formatTime(dur);
+      }
+    }, 1000);
+  } else {
+    $("#mainPlay").textContent = "▶";
+    clearInterval(ytInterval);
+    if (event.data === YT.PlayerState.ENDED) {
+      if (repeatMode === 2) ytPlayer.seekTo(0, true);
+      else $("#next").click();
+    }
+  }
+}
+
+function extractYTId(url) {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  return match ? match[1] : null;
+}
+
+$("#importYt").onclick = () => {
+  const url = $("#ytInput").value.trim();
+  const id = extractYTId(url);
+  if (!id) { toast("Invalid YouTube Link"); return; }
+  
+  if (songs.some(s => s.ytId === id)) {
+    toast("YouTube video already in library!");
+    return;
+  }
+
+  songs.push({
+    title: `YouTube Video (${id})`,
+    artist: "YouTube Stream",
+    genre: "YouTube",
+    cover: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
+    isYouTube: true,
+    ytId: id
+  });
+  $("#ytInput").value = "";
+  $("#meta").close();
+  render();
+  toast("YouTube track added!");
+};
+
+// --- AUDIUS API SEARCH ---
+async function fetchAudiusHost() {
+  const res = await fetch('https://api.audius.co/');
+  const data = await res.json();
+  return data.data[0];
+}
+
+$("#netSearchBtn").onclick = async () => {
+  const query = $("#netSearchInput").value.trim();
+  if (!query) return;
+  const resultsDiv = $("#netResults");
+  resultsDiv.innerHTML = `<div style="text-align:center; padding: 10px; color: var(--muted);">Searching...</div>`;
+  
+  try {
+    const host = await fetchAudiusHost();
+    const res = await fetch(`${host}/v1/tracks/search?query=${encodeURIComponent(query)}&app_name=MyMusicPro`);
+    const json = await res.json();
+    const tracks = json.data;
+    
+    if(!tracks || tracks.length === 0) {
+       resultsDiv.innerHTML = `<div class="empty">No tracks found.</div>`; return;
+    }
+
+    resultsDiv.innerHTML = tracks.map(t => {
+      const art = t.artwork ? (t.artwork['480x480'] || t.artwork['150x150']) : '';
+      const streamUrl = `${host}/v1/tracks/${t.id}/stream?app_name=MyMusicPro`;
+      
+      // Check if song is already in library to show checkmark instead of plus
+      const alreadyAdded = songs.some(s => s.url === streamUrl);
+      const btnContent = alreadyAdded ? '✔' : '+';
+      const btnStyle = alreadyAdded ? 'color: var(--muted); cursor: default;' : 'color: var(--accent); cursor: pointer;';
+      const actionOnClick = alreadyAdded ? '' : `onclick="addNetSong(this, '${esc(t.title)}', '${esc(t.user.name)}', '${art}', '${streamUrl}')"`;
+
+      return `
+        <div class="search-item">
+          <img src="${art || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}" onerror="this.style.display='none'">
+          <div>
+            <div style="font-weight:600; font-size:14px;">${esc(t.title)}</div>
+            <div style="font-size:12px; color:var(--muted)">${esc(t.user.name)}</div>
+          </div>
+          <div style="margin-left:auto; font-weight:bold; font-size:18px; ${btnStyle}" ${actionOnClick}>${btnContent}</div>
+        </div>`;
+    }).join("");
+  } catch (err) {
+    resultsDiv.innerHTML = `<div class="empty">Connection error.</div>`;
+  }
+};
+
+window.addNetSong = (btn, title, artist, cover, url) => {
+  if (songs.some(s => s.url === url)) {
+    toast("Song already in library!");
+    return;
+  }
+  songs.push({ title, artist, genre: "Online", cover, url, isWeb: true });
+  render();
+  toast("Added to library!");
+
+  // Change plus to checkmark instantly and lock button
+  btn.textContent = "✔";
+  btn.style.color = "var(--muted)";
+  btn.style.cursor = "default";
+  btn.removeAttribute("onclick");
+};
+
+// --- UI & HELPERS ---
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
+}
+function esc(str) { return String(str || "").replace(/[&<>"']/g, m => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[m])); }
+function formatTime(secs) { if (isNaN(secs) || secs < 0) return "0:00"; const m = Math.floor(secs / 60); const s = Math.floor(secs % 60); return `${m}:${s < 10 ? '0' : ''}${s}`; }
+
+// --- VISUALIZER ---
+let audioCtx, analyser, visualizerSource, canvasCtx;
+function initVisualizer() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser(); analyser.fftSize = 64;
+    visualizerSource = audioCtx.createMediaElementSource(audio);
+    visualizerSource.connect(analyser); analyser.connect(audioCtx.destination);
+    canvasCtx = $("#visualizer").getContext("2d");
+    drawVisualizer();
+  } catch (e) { console.warn(e); }
+}
+
+function drawVisualizer() {
+  requestAnimationFrame(drawVisualizer);
+  const canvas = $("#visualizer");
+  if (!canvasCtx || !analyser || (songs[current] && songs[current].isYouTube)) {
+    if(canvasCtx) canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+  analyser.getByteFrequencyData(dataArray);
+  canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+  const barWidth = (canvas.width / bufferLength) * 2;
+  let x = 0;
+  for (let i = 0; i < bufferLength; i++) {
+    const barHeight = (dataArray[i] / 255) * canvas.height;
+    canvasCtx.fillStyle = '#9b6cff';
+    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+    x += barWidth;
+  }
+}
+
+// --- RENDER ---
+function render() {
+  const query = $("#search").value.toLowerCase();
+  let filtered = songs.map((s, i) => ({ ...s, origIndex: i }));
+
+  if (activeFilter === 'favs') filtered = filtered.filter(s => liked.has(s.title));
+  else if (activeFilter === 'funk') filtered = filtered.filter(s => s.builtIn);
+
+  filtered = filtered.filter(s => (s.title + " " + s.artist + " " + s.genre).toLowerCase().includes(query));
+  $("#count").textContent = `${songs.length} track${songs.length === 1 ? '' : 's'}`;
+
+  if (!filtered.length) {
+    $("#list").innerHTML = `<div class="empty">No music found.<br>Tap <b>Get New Music</b> to add songs.</div>`;
+    return;
+  }
+  $("#list").innerHTML = filtered.map(s => songHTML(s)).join("");
+}
+
+function songHTML(s) {
+  const cover = s.cover ? `<img style="width:100%;height:100%;object-fit:cover" src="${s.cover}">` : "🎵";
+  let badge = s.builtIn ? '<span class="badge">PROCEDURAL</span>' : (s.isYouTube ? '<span class="badge yt">YOUTUBE</span>' : (s.isWeb ? '<span class="badge web">ONLINE</span>' : ''));
+  
+  return `
+    <div class="song">
+      <div class="thumb">${cover}</div>
+      <div class="song-info">
+        <div class="song-title">${esc(s.title)} ${badge}</div>
+        <div class="artist">${esc(s.artist)}</div>
+      </div>
+      <button class="play-btn" onclick="playSong(${s.origIndex})">▶</button>
+      <button class="more-btn" onclick="openPlaylistModal(${s.origIndex})">⋮</button>
+    </div>`;
+}
+
+// --- LOCAL FILES & PROCEDURAL ---
+$("#files").onchange = (e) => {
+  const files = [...e.target.files];
+  if (!files.length) return;
+  let addedCount = 0;
+  files.forEach(f => {
+    if (!f.type.startsWith("audio/")) return;
+    const cleanName = f.name.replace(/\.[^.]+$/, "");
+    if (!songs.some(s => s.title === cleanName)) {
+      songs.push({ title: cleanName, artist: "Local File", genre: "Device", cover: "", url: URL.createObjectURL(f) });
+      addedCount++;
+    }
+  });
+  e.target.value = "";
+  $("#meta").close();
+  render();
+  toast(`${addedCount} file(s) imported`);
+};
+
+async function addFunkDemo() {
+  const tracks = [
+    { title: "Rio Night Drive (Full)", artist: "Synth Engine", genre: "Procedural", bpm: 128, pat: [[0,"square",110,.13,.18],[.25,"triangle",55,.16,.22],[.5,"square",146,.12,.16]] },
+    { title: "Clouds at Midnight (Full)", artist: "Synth Engine", genre: "Ambient", bpm: 82, pat: [[0,"sine",110,.8,.08],[1,"sine",165,.7,.07],[2,"triangle",196,.8,.06]] }
+  ];
+  for (let t of tracks) {
+    if (songs.some(s => s.title === t.title)) continue;
+    const beat = 60 / t.bpm;
+    const offlineCtx = new OfflineAudioContext(2, 44100 * (16 * beat * 16), 44100);
+    for (let loop = 0; loop < 16; loop++) {
+      const loopOffset = loop * 16 * beat;
+      t.pat.forEach(p => {
+        const time = loopOffset + p[0] * beat;
+        const osc = offlineCtx.createOscillator(), gain = offlineCtx.createGain();
+        osc.type = p[1]; osc.frequency.value = p[2];
+        gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(p[4] || 0.15, time + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, time + p[3] * beat);
+        osc.connect(gain); gain.connect(offlineCtx.destination);
+        osc.start(time); osc.stop(time + p[3] * beat + 0.05);
+      });
+    }
+    const renderedBuffer = await offlineCtx.startRendering();
+    const numOfChan = renderedBuffer.numberOfChannels;
+    const length = renderedBuffer.length * numOfChan * 2 + 44;
+    const out = new DataView(new ArrayBuffer(length));
+    let pos = 0;
+    const set16 = d => { out.setUint16(pos, d, true); pos += 2; };
+    const set32 = d => { out.setUint32(pos, d, true); pos += 4; };
+    set32(0x46464952); set32(length-8); set32(0x45564157); set32(0x20746d66); set32(16); set16(1); set16(numOfChan);
+    set32(44100); set32(44100 * 2 * numOfChan); set16(numOfChan*2); set16(16); set32(0x61746164); set32(length-pos-4);
+    for(let i=0; i<renderedBuffer.length; i++) {
+      for(let c=0; c<numOfChan; c++) {
+        let smp = Math.max(-1, Math.min(1, renderedBuffer.getChannelData(c)[i]));
+        out.setInt16(pos, (smp < 0 ? smp * 32768 : smp * 32767)|0, true); pos += 2;
+      }
+    }
+    songs.push({ ...t, url: URL.createObjectURL(new Blob([out], {type:"audio/wav"})), builtIn: true, cover: "" });
+  }
+  render();
+}
+
+// --- PLAYBACK ENGINE ---
+window.playSong = async i => {
+  if (i < 0 || i >= songs.length) return;
+  initVisualizer();
+  if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+
+  audio.pause();
+  if (isYTReady && ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
+
+  current = i;
+  const s = songs[i];
+  
+  if (s.isYouTube) {
+    if (isYTReady) { ytPlayer.loadVideoById(s.ytId); ytPlayer.playVideo(); }
+    $("#visualizer").style.opacity = "0";
+  } else {
+    audio.src = s.url;
+    audio.play();
+    $("#visualizer").style.opacity = "1";
+  }
+
+  $("#nowTitle").textContent = s.title;
+  $("#nowArtist").textContent = s.artist;
+  
+  const bigCover = $("#bigCover");
+  if (s.cover) { bigCover.innerHTML = `<img src="${s.cover}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;">`; } 
+  else { bigCover.textContent = "🎵"; }
+
+  $("#player").classList.add("open");
+  $("#mainPlay").textContent = "Ⅱ";
+  $("#like").textContent = liked.has(s.title) ? "♥" : "♡";
+  $("#like").style.color = liked.has(s.title) ? "var(--accent)" : "white";
+};
+
+$("#closePlayer").onclick = () => $("#player").classList.remove("open");
+$("#addHero").onclick = $("#addNav").onclick = () => $("#meta").showModal();
+$("#cancel").onclick = () => $("#meta").close();
+$("#search").oninput = render;
+
+["filterAll", "filterFavs", "filterFunk"].forEach(id => {
+  $(`#${id}`).onclick = e => {
+    activeFilter = id.replace("filter", "").toLowerCase();
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    render();
+  };
+});
+
+$("#mainPlay").onclick = () => {
+  const s = songs[current];
+  if (!s) return;
+  if (s.isYouTube && isYTReady) {
+    if (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+    else ytPlayer.playVideo();
+  } else {
+    if(audio.paused) { audio.play(); $("#mainPlay").textContent="Ⅱ"; } 
+    else { audio.pause(); $("#mainPlay").textContent="▶"; }
+  }
+};
+
+$("#prev").onclick = () => playSong(current <= 0 ? songs.length - 1 : current - 1);
+$("#next").onclick = () => playSong(isShuffle ? Math.floor(Math.random() * songs.length) : (current + 1) % songs.length);
+$("#shuffleBtn").onclick = () => { isShuffle = !isShuffle; $("#shuffleBtn").classList.toggle("active", isShuffle); toast(isShuffle ? "Shuffle On" : "Shuffle Off"); };
+$("#repeatBtn").onclick = () => { repeatMode = (repeatMode + 1) % 3; $("#repeatBtn").textContent = repeatMode === 2 ? "🔂" : "🔁"; $("#repeatBtn").classList.toggle("active", repeatMode > 0); };
+
+$("#like").onclick = () => {
+  if (current < 0) return;
+  const t = songs[current].title;
+  if (liked.has(t)) { liked.delete(t); toast("Removed from favorites"); } 
+  else { liked.add(t); toast("Added to favorites"); }
+  localStorage.setItem("liked_songs", JSON.stringify([...liked]));
+  $("#like").textContent = liked.has(t) ? "♥" : "♡";
+  $("#like").style.color = liked.has(t) ? "var(--accent)" : "white";
+  render();
+};
+
+audio.ontimeupdate = () => {
+  if (!audio.duration) return;
+  $("#seek").value = (audio.currentTime / audio.duration) * 100;
+  $("#currTime").textContent = formatTime(audio.currentTime);
+  $("#durTime").textContent = formatTime(audio.duration);
+};
+
+$("#seek").oninput = () => {
+  const s = songs[current];
+  if (s && s.isYouTube && isYTReady && ytPlayer.getDuration()) {
+    ytPlayer.seekTo(($("#seek").value / 100) * ytPlayer.getDuration(), true);
+  } else if (audio.duration) {
+    audio.currentTime = ($("#seek").value / 100) * audio.duration;
+  }
+};
+
+audio.onended = () => { if (repeatMode === 2) { audio.currentTime = 0; audio.play(); } else $("#next").click(); };
+$("#volume").oninput = e => { const val = e.target.value; audio.volume = val; if(isYTReady && ytPlayer.setVolume) ytPlayer.setVolume(val*100); };
+$("#muteBtn").onclick = () => { audio.muted = !audio.muted; $("#muteBtn").textContent = audio.muted ? "🔇" : "🔊"; };
+
+// --- WALLPAPERS ---
+$("#settings").onclick = () => $("#settingsDialog").showModal();
+$("#closeSettings").onclick = () => $("#settingsDialog").close();
+
+const wallpapers = ["linear-gradient(135deg,#08090e,#28134a,#08090e)", "radial-gradient(circle at 20% 20%,#3b1b68,transparent 35%),radial-gradient(circle at 80% 80%,#123b58,transparent 35%),#08090e", "linear-gradient(135deg,#101820,#173a3f,#081014)"];
+$("#walls").innerHTML = wallpapers.map((w, i) => `<button class="wall" data-i="${i}" style="background:${w}; height:70px; border-radius:12px; border:2px solid transparent;"></button>`).join("");
+document.querySelectorAll(".wall").forEach(b => {
+  b.onclick = () => { document.body.style.background = wallpapers[b.dataset.i]; localStorage.setItem("wallpaper", b.dataset.i); };
+});
+const savedWall = localStorage.getItem("wallpaper");
+if (savedWall !== null) document.body.style.background = wallpapers[savedWall];
+
+$("#funkNav").onclick = () => { if (songs.length) playSong(Math.floor(Math.random() * songs.length)); };
+
+addFunkDemo();
+</script>
+</body>
+</html>
